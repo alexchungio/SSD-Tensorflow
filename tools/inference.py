@@ -25,14 +25,13 @@ from  libs.box_utils import draw_box_in_image
 from utils.tools import makedir, view_bar
 
 
-
 class ObjectInference():
     def __init__(self, net_shape=(300, 300), num_classes=21, ckpt_path=None, select_threshold=0.5, nms_threshold=0.45):
         self.net_shape = net_shape
         self.num_classes = num_classes
         self.ckpt_path = ckpt_path
         self.ssd_net = ssd_vgg_300.SSDNet()
-        self.data_format = 'NHWC'
+        self.data_format = cfgs.DATA_FORMAT
         # SSD default anchor boxes.
         self.ssd_anchors = self.ssd_net.make_anchors(net_shape)
         self.select_threshold = select_threshold
