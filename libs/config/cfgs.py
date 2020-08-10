@@ -21,7 +21,7 @@ from enum import Enum
 # ------------------------------------------------
 # VERSION = 'FPN_Res101_20181201'
 VERSION = 'FPN_Res101_20200728'
-NET_NAME = 'resnet_v1_101'
+MODEL_NAME = 'ssd_300_vgg'
 ADD_BOX_IN_TENSORBOARD = True
 
 # ---------------------------------------- System_config
@@ -30,7 +30,16 @@ print (20*"++--")
 print (ROOT_PATH)
 GPU_GROUP = "4"
 
+SHOW_TRAIN_INFO_INTE = 10
+SMRY_ITER = 100  # 'The frequency with which logs are print.')
+SAVE_WEIGHTS_INTE = 10000
 
+NUM_CLONES = 1  # Number of model clones to deploy
+CLONE_ON_CPU = False # 'Use CPUs to deploy clones.'
+GPU_MEMORY_FRACTION = 0.8  # 'GPU memory fraction to use.'
+
+
+TFRECORD_DIR = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/pascal_tfrecord'
 SUMMARY_PATH = ROOT_PATH + '/outputs/summary'
 INFERENCE_SAVE_PATH = ROOT_PATH + '/outputs/inference_results'
 TEST_SAVE_PATH = ROOT_PATH + '/outputs/test_results'
@@ -39,29 +48,88 @@ INFERENCE_IMAGE_PATH = ROOT_PATH + '/outputs/inference_image'
 
 # -------------------------------------------- Data_preprocess_config
 DATASET_NAME = 'pascal'  # 'ship', 'spacenet', 'pascal', 'coco'
-NUM_READER = 4
-NUM_THREDS = 32
+DATA_FORMAT = "NCHW"
+NUM_READER = 4  # The number of parallel readers that read data from the dataset.
+NUM_THREADS = 4  # 'The number of threads used to create the batches.'
 NUM_SPLIT_DATA = {
     'train': 17125,
     'val': 0,
 }
-PIXEL_MEAN = [123.68, 116.779, 103.939]  # R, G, B. In tf, channel is RGB. In openCV, channel is BGR
-NUM_CLASS = 20
 MIN_OBJECT_COVERED = 0.25
 CROP_RATIO_RANGE = (0.6, 1.67)  # Distortion ratio during cropping.
 BBOX_CROP_OVERLAP = 0.5  # Minimum overlap to keep a bbox after cropping.
 TRAIN_SIZE = (300, 300)
 EVAL_SIZE = (300, 300)
 # Some training pre-processing parameters.
-
-DATA_FORMAT = ""
-
 # Resizing strategies.
 class Resize(Enum):
     NONE = 0 # Nothing!
     CENTRAL_CROP = 1 # Crop (and pad if necessary).
     PAD_AND_RESIZE = 2 # Pad, and resize to output shape.
     WARP_RESIZE = 3  # Warp resize.
+
+#-----------------------------------network config------------------------------------
+IMAGE_SHAPE = (300, 300),
+NUM_CLASS = 20,
+no_annotation_label = 21,
+FEATURE_LAYER = ['block4', 'block7', 'block8', 'block9', 'block10', 'block11'],
+FEATURE_SHAPE = [(38, 38), (19, 19), (10, 10), (5, 5), (3, 3), (1, 1)],
+ANCHOR_SIZE_BOUND = [0.15, 0.90],
+# anchor_size_bounds=[0.20, 0.90],
+ANCHOR_SIZE = [(21., 45.),
+                (45., 99.),
+                (99., 153.),
+                (153., 207.),
+                (207., 261.),
+                (261., 315.)],
+# anchor_sizes=[(30., 60.),
+#               (60., 111.),
+#               (111., 162.),
+#               (162., 213.),
+#               (213., 264.),
+#               (264., 315.)],
+ANCHOR_RATIO = [[2, .5],
+                 [2, .5, 3, 1. / 3],
+                 [2, .5, 3, 1. / 3],
+                 [2, .5, 3, 1. / 3],
+                 [2, .5],
+                 [2, .5]],
+ANCHOR_STEPS = [8, 16, 32, 64, 100, 300],
+ANCHOR_OFFSETS = 0.5,
+NORMALIZATION = [20, -1, -1, -1, -1, -1],
+PRIOR_SCALING = [0.1, 0.1, 0.2, 0.2]
+
+#---------------------------ssd net flag-----------------------------
+LOSS_ALPHA = 1  # Alpha para meter in the loss function.
+NEGATIVE_RATIO = 3. # 'Negative ratio in the loss function.'
+MATCH_THRESHOLD = 0.5 # Matching threshold in the loss function.
+
+# =========================================================================== #
+# Optimization Flags.
+# =========================================================================== #
+# use momentum optimizer
+WEIGHT_DECAY = 0.00004 # The weight decay on the model weights.
+MOMENTUM = 0.9  # The momentum for the MomentumOptimizer and RMSPropOptimizer.
+LEARING_RATE_BASE = 0.001
+WARM_UP_LEARING_RATE = 0.00001
+DECAY_STEP = [80000, 120000]  # 50000, 70000
+WARM_UP_STEP = 8000
+EPSILON = 1e-5
+MAX_ITERATION = 200000
+
+LABELS_SMOOTH = 0.0  # The amount of label smoothing.
+MOVING_AVERATE_DECAY = None  # The decay to use for the moving average.
+
+
+# =========================================================================== #
+# Fine-Tuning Flags.
+# =========================================================================== #
+CHEACKPOINT_PATH = None  # The path to a checkpoint from which to fine-tune.
+CHEACKPOINT_MODEL_SCOPE = None  # Model scope in the checkpoint. None if the same as the trained model.
+CHEACKPOINT_EXCLUDE_SCOPES = None  #Comma-separated list of scopes of variables to exclude when restoring from a checkpoint.
+TRAINABLE_SCOPE = None  # Comma-separated list of scopes to filter the set of variables to train. By default, None would train all the variables.
+IGNORE_MISSING_VARS = False  # When restoring a checkpoint would ignore missing variables.
+
 
 
 VOC_LABELS = {
