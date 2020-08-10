@@ -89,12 +89,9 @@ def only_draw_scores(draw_obj, box, score, color):
     x, y = box[0], box[1]
     txt = "obj:" +str(round(score, 2))
     txt_length = int(6 * len(txt))
-    draw_obj.rectangle(xy=[x, y - 10, x + txt_length, y], fill=color)
+    draw_obj.rectangle(xy=[x, y-10, x+txt_length, y], fill=color)
+    draw_obj.text(xy=(x, y), text=txt, fill='black', font=FONT)
 
-    draw_obj.text(xy=(x, y),
-                  text=txt,
-                  fill='black',
-                  font=FONT)
 
 def draw_label_with_scores(draw_obj, box, label, score, color):
     x, y = box[0], box[1]
