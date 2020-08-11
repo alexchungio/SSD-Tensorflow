@@ -19,6 +19,7 @@ from libs.nets import custom_layers
 # =========================================================================== #
 # SSD loss function.
 # =========================================================================== #
+
 def ssd_losses(logits, localisations,
                gclasses, glocalisations, gscores,
                match_threshold=0.5,
@@ -84,13 +85,14 @@ def ssd_losses(logits, localisations,
                                                                   labels=gclasses)
             loss = tf.div(tf.reduce_sum(loss * fpmask), batch_size, name='value')
             tf.losses.add_loss(loss)
+            tf.summary.scalar("cross_entropy_pos_loss", loss)
 
         with tf.name_scope('cross_entropy_neg'):
             loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,
                                                                   labels=no_classes)
             loss = tf.div(tf.reduce_sum(loss * fnmask), batch_size, name='value')
             tf.losses.add_loss(loss)
-
+            tf.summary.scalar("cross_entropy_neg_loss", loss)
         # Add localization loss: smooth L1, L2, ...
         with tf.name_scope('localization'):
             # Weights Tensor: positive mask + random negative.
@@ -98,6 +100,7 @@ def ssd_losses(logits, localisations,
             loss = custom_layers.abs_smooth(localisations - glocalisations)
             loss = tf.div(tf.reduce_sum(loss * weights), batch_size, name='value')
             tf.losses.add_loss(loss)
+            tf.summary.scalar("localization_loss", loss)
 
 
 def ssd_losses_old(logits, localisations,
@@ -200,3 +203,6 @@ def ssd_losses_old(logits, localisations,
                 tf.add_to_collection('EXTRA_LOSSES', total_cross_neg)
                 tf.add_to_collection('EXTRA_LOSSES', total_cross)
                 tf.add_to_collection('EXTRA_LOSSES', total_loc)
+
+                return total_cross_pos, total_cross_neg, total_loc
+
