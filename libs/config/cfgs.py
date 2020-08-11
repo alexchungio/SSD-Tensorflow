@@ -39,16 +39,19 @@ CLONE_ON_CPU = False # 'Use CPUs to deploy clones.'
 GPU_MEMORY_FRACTION = 0.8  # 'GPU memory fraction to use.'
 
 
-TFRECORD_DIR = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/pascal_tfrecord'
+TFRECORD_DIR = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/pascal_tfrecord_ssd'
 SUMMARY_PATH = ROOT_PATH + '/outputs/summary'
 INFERENCE_SAVE_PATH = ROOT_PATH + '/outputs/inference_results'
 TEST_SAVE_PATH = ROOT_PATH + '/outputs/test_results'
 INFERENCE_IMAGE_PATH = ROOT_PATH + '/outputs/inference_image'
 
-
+PRETRAINED_CKPT = ROOT_PATH + '/data/pretrained_weights'
+TRAINED_CKPT = os.path.join(ROOT_PATH, 'outputs/trained_weights')
+EVALUATE_DIR = ROOT_PATH + '/outputs/evaluate_result'
 # -------------------------------------------- Data_preprocess_config
 DATASET_NAME = 'pascal'  # 'ship', 'spacenet', 'pascal', 'coco'
 DATA_FORMAT = "NCHW"
+BATCH_SIZE = 16
 NUM_READER = 4  # The number of parallel readers that read data from the dataset.
 NUM_THREADS = 4  # 'The number of threads used to create the batches.'
 NUM_SPLIT_DATA = {
@@ -111,7 +114,7 @@ MATCH_THRESHOLD = 0.5 # Matching threshold in the loss function.
 WEIGHT_DECAY = 0.00004 # The weight decay on the model weights.
 MOMENTUM = 0.9  # The momentum for the MomentumOptimizer and RMSPropOptimizer.
 LEARING_RATE_BASE = 0.001
-WARM_UP_LEARING_RATE = 0.00001
+WARM_UP_LEARING_RATE = 0.0001
 DECAY_STEP = [80000, 120000]  # 50000, 70000
 WARM_UP_STEP = 8000
 EPSILON = 1e-5
