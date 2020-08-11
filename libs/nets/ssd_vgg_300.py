@@ -137,6 +137,8 @@ class SSDNet(object):
         else:
             self.params = SSDNet.default_params
 
+        self.global_step = tf.train.get_or_create_global_step()
+
     # ======================================================================= #
     def net(self, inputs,
             is_training=True,
@@ -252,6 +254,143 @@ class SSDNet(object):
                           alpha=alpha,
                           label_smoothing=label_smoothing,
                           scope=scope)
+
+    def learning_rate(self, global_step, boundaries, rates, warmup=False):
+        """Manually stepped learning rate schedule.
+
+        This function provides fine grained control over learning rates.  One must
+        specify a sequence of learning rates as well as a set of integer steps
+        at which the current learning rate must transition to the next.  For example,
+        if boundaries = [5, 10] and rates = [.1, .01, .001], then the learning
+        rate returned by this function is .1 for global_step=0,...,4, .01 for
+        global_step=5...9, and .001 for global_step=10 and onward.
+
+        Args:
+          global_step: int64 (scalar) tensor representing global step.
+          boundaries: a list of global steps at which to switch learning
+            rates.  This list is assumed to consist of increasing positive integers.
+          rates: a list of (float) learning rates corresponding to intervals between
+            the boundaries.  The length of this list must be exactly
+            len(boundaries) + 1.
+          warmup: Whether to linearly interpolate learning rate for steps in
+            [0, boundaries[0]].
+
+        Returns:
+          If executing eagerly:
+            returns a no-arg callable that outputs the (scalar)
+            float tensor learning rate given the current value of global_step.
+          If in a graph:
+            immediately returns a (scalar) float tensor representing learning rate.
+        Raises:
+          ValueError: if one of the following checks fails:
+            1. boundaries is a strictly increasing list of positive integers
+            2. len(rates) == len(boundaries) + 1
+            3. boundaries[0] != 0
+        """
+        if any([b < 0 for b in boundaries]) or any(
+                [not isinstance(b, int) for b in boundaries]):
+            raise ValueError('boundaries must be a list of positive integers')
+        if any([bnext <= b for bnext, b in zip(boundaries[1:], boundaries[:-1])]):
+            raise ValueError('Entries in boundaries must be strictly increasing.')
+        if any([not isinstance(r, float) for r in rates]):
+            raise ValueError('Learning rates must be floats')
+        if len(rates) != len(boundaries) + 1:
+            raise ValueError('Number of provided learning rates must exceed '
+                             'number of boundary points by exactly 1.')
+
+        if boundaries and boundaries[0] == 0:
+            raise ValueError('First step cannot be zero.')
+
+        if warmup and boundaries:
+            slope = (rates[1] - rates[0]) * 1.0 / boundaries[0]
+            warmup_steps = list(range(boundaries[0]))
+            warmup_rates = [rates[0] + slope * step for step in warmup_steps]
+            boundaries = warmup_steps + boundaries
+            rates = warmup_rates + rates[1:]
+        else:
+            boundaries = [0] + boundaries
+        num_boundaries = len(boundaries)
+
+        def eager_decay_rate():
+            """Callable to compute the learning rate."""
+            rate_index = tf.reduce_max(tf.where(
+                tf.greater_equal(global_step, boundaries),
+                list(range(num_boundaries)),
+                [0] * num_boundaries))
+            return tf.reduce_sum(rates * tf.one_hot(rate_index, depth=num_boundaries),
+                                 name='learning_rate')
+
+        if tf.executing_eagerly():
+            return eager_decay_rate
+        else:
+            return eager_decay_rate()
+
+    def gather_loss(clone, regularization_losses):
+        """Gather the loss for a single clone.
+
+        Args:
+            clone: A Clone namedtuple.
+            regularization_losses: Possibly empty list of regularization_losses
+                to add to the clone losses.
+
+        Returns:
+            A tensor for the total loss for the clone.  Can be None.
+        """
+        # The return value.
+        sum_loss = None
+        # Individual components of the loss that will need summaries.
+        regularization_loss = None
+        # Compute and aggregate losses on the clone device.
+        # with tf.device('/device:CPU:0'):
+        all_losses = []
+        clone_losses = tf.get_collection(tf.GraphKeys.LOSSES, scope=None)
+        if clone_losses:
+            clone_loss = tf.add_n(clone_losses, name='clone_loss')
+
+            all_losses.append(clone_loss)
+        if regularization_losses:
+            regularization_loss = tf.add_n(regularization_losses,
+                                           name='regularization_loss')
+            all_losses.append(regularization_loss)
+        if all_losses:
+            sum_loss = tf.add_n(all_losses)
+        # tf.summary.scalar(clone.scope + '/clone_loss', clone_loss)
+        if regularization_loss is not None:
+            tf.summary.scalar('regularization_loss', regularization_loss)
+        return sum_loss
+
+
+    def optimize_gradient(self, optimizer, regularization_losses=None, **kwargs):
+        """Compute clone losses and gradients for the given list of `Clones`.
+
+        Note: The regularization_losses are added to the first clone losses.
+
+        Args:
+          clones: List of `Clones` created by `create_clones()`.
+          optimizer: An `Optimizer` object.
+          regularization_losses: Optional list of regularization losses. If None it
+             will gather them from tf.GraphKeys.REGULARIZATION_LOSSES. Pass `[]` to
+             exclude them.
+          **kwargs: Optional list of keyword arguments to pass to `compute_gradients`.
+
+        Returns:
+          A tuple (total_loss, grads_and_vars).
+            - total_loss: A Tensor containing the average of the clone losses
+                including the regularization loss.
+            - grads_and_vars: A List of tuples (gradient, variable) containing the
+                sum of the gradients for each variable.
+        """
+        if regularization_losses is None:
+            regularization_losses = tf.get_collection(
+                tf.GraphKeys.REGULARIZATION_LOSSES)
+
+        total_loss = self.gather_loss(regularization_losses)
+
+        optimizer_gradients = None
+        if total_loss is not None:
+            optimizer_gradients = optimizer.compute_gradients(total_loss, **kwargs)
+
+        return total_loss, optimizer_gradients
 
 
 # =========================================================================== #
