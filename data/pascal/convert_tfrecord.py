@@ -91,7 +91,7 @@ def convert_pascal_to_tfrecord(dataset_path, save_path, record_capacity=2000, sh
 
                 encoded_img, shape, bboxes, labels, labels_text, difficult, truncated = process_image(img_file, xml_file)
 
-                image_record = serialize_example(encoded_img, labels, labels_text, bboxes, shape, difficult, truncated)
+                image_record = serialize_example(img_name, encoded_img, labels, labels_text, bboxes, shape, difficult, truncated)
                 write.write(record=image_record)
 
                 num_samples += 1
@@ -153,7 +153,7 @@ def process_image(img_path, xml_path):
     return encoded_img, shape, bboxes, labels, labels_text, difficult, truncated
 
 
-def serialize_example(image_data, labels, labels_text, bboxes, shape, difficult, truncated):
+def serialize_example(filename, image_data, labels, labels_text, bboxes, shape, difficult, truncated):
     """
     create a tf.Example message to be written to a file
     :param label: label info
@@ -174,10 +174,12 @@ def serialize_example(image_data, labels, labels_text, bboxes, shape, difficult,
         # pylint: enable=expression-not-assigned
 
     feature = {
+            'image/filename':_bytes_feature(filename.encode()),
             'image/height': _int64_feature(shape[0]),
             'image/width': _int64_feature(shape[1]),
             'image/channels': _int64_feature(shape[2]),
             'image/shape': _int64_feature(shape),
+            'image/object/num_object': _int64_feature(len(bboxes)),
             'image/object/bbox/xmin': _float_feature(xmin),
             'image/object/bbox/xmax': _float_feature(xmax),
             'image/object/bbox/ymin': _float_feature(ymin),
@@ -186,7 +188,8 @@ def serialize_example(image_data, labels, labels_text, bboxes, shape, difficult,
             'image/object/bbox/label_text': _bytes_feature(labels_text),
             'image/object/bbox/difficult': _int64_feature(difficult),
             'image/object/bbox/truncated': _int64_feature(truncated),
-            'image/encoded': _bytes_feature(image_data)}
+            'image/encoded': _bytes_feature(image_data),
+            'image/format': _bytes_feature(b'JPEG')}
     # create a feature message using tf.train.Example
     example_proto = tf.train.Example(features=tf.train.Features(feature=feature))
     return example_proto.SerializeToString()

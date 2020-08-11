@@ -54,6 +54,7 @@ from collections import namedtuple
 import numpy as np
 import tensorflow as tf
 
+from libs.config import cfgs
 from libs.box_utils import bboxes_utils
 from libs.box_utils import box_select
 from libs.box_utils import encode_decode
@@ -64,7 +65,6 @@ from libs.losses import losses
 
 
 slim = tf.contrib.slim
-
 
 # =========================================================================== #
 # SSD class definition.
@@ -136,6 +136,16 @@ class SSDNet(object):
             self.params = params
         else:
             self.params = SSDNet.default_params
+        # if cfgs.DATA_FORMAT == "NHWC":
+        #     self.images_batch = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, None, None, 3],
+        #                                                  name="input_images")
+        # else:
+        #     self.images_batch = tf.compat.v1.placeholder(dtype=tf.float32, shape=[None, 3, None, None],
+        #                                                  name="input_images")
+
+        # self.labels_batch = tf.placeholder(dtype=tf.int32, shape=[None, None, cfgs.NUM_CLASS+1], name="gt_labels")
+        # self.bboxes_batch = tf.placeholder(dtype=tf.float32, shape=(None, None, None, 4), name="gt_bboxes")
+        # self.scores_batch  = tf.placeholder(dtype=tf.float32, shape=(None, None, 1), name="gt_scores")
 
         self.global_step = tf.train.get_or_create_global_step()
 
@@ -392,6 +402,15 @@ class SSDNet(object):
 
         return total_loss, optimizer_gradients
 
+    def fill_feed_dict(self, image_batch, labels_batch, bboxes_batch, scores_batch):
+
+        feed_dict = {self.images_batch: image_batch,
+                     self.labels_batch: labels_batch,
+                     self.bboxes_batch: bboxes_batch,
+                     self.scores_batch: scores_batch
+                     }
+        return feed_dict
+
 
 # =========================================================================== #
 # SSD tools...
@@ -501,11 +520,11 @@ def ssd_multibox_layer(inputs,
 
 
 def ssd_net(inputs,
-            num_classes=None,
-            feat_layers=None,
-            anchor_sizes=None,
-            anchor_ratios=None,
-            normalizations=None,
+            num_classes=SSDNet.default_params.num_classes,
+            feat_layers=SSDNet.default_params.feat_layers,
+            anchor_sizes=SSDNet.default_params.anchor_sizes,
+            anchor_ratios=SSDNet.default_params.anchor_ratios,
+            normalizations=SSDNet.default_params.normalizations,
             is_training=True,
             dropout_keep_prob=0.5,
             prediction_fn=slim.softmax,

@@ -9,8 +9,6 @@
 # @ Time       : 2020/8/4 下午3:22
 # @ Software   : PyCharm
 #-------------------------------------------------------
-
-# -*- coding: utf-8 -*-
 from __future__ import division
 from __future__ import print_function
 from __future__ import absolute_import
@@ -50,7 +48,8 @@ TRAINED_CKPT = os.path.join(ROOT_PATH, 'outputs/trained_weights')
 EVALUATE_DIR = ROOT_PATH + '/outputs/evaluate_result'
 # -------------------------------------------- Data_preprocess_config
 DATASET_NAME = 'pascal'  # 'ship', 'spacenet', 'pascal', 'coco'
-DATA_FORMAT = "NCHW"
+DATA_FORMAT = 'NCHW'
+PIXEL_MEAN = [123.68, 116.78, 103.94]
 BATCH_SIZE = 16
 NUM_READER = 4  # The number of parallel readers that read data from the dataset.
 NUM_THREADS = 4  # 'The number of threads used to create the batches.'
@@ -72,19 +71,19 @@ class Resize(Enum):
     WARP_RESIZE = 3  # Warp resize.
 
 #-----------------------------------network config------------------------------------
-IMAGE_SHAPE = (300, 300),
-NUM_CLASS = 20,
-no_annotation_label = 21,
-FEATURE_LAYER = ['block4', 'block7', 'block8', 'block9', 'block10', 'block11'],
-FEATURE_SHAPE = [(38, 38), (19, 19), (10, 10), (5, 5), (3, 3), (1, 1)],
-ANCHOR_SIZE_BOUND = [0.15, 0.90],
+IMAGE_SHAPE = (300, 300)
+NUM_CLASS = 20
+NO_ANNOTATION_LABEL = 21
+FEATURE_LAYER = ['block4', 'block7', 'block8', 'block9', 'block10', 'block11']
+FEATURE_SHAPE = [(38, 38), (19, 19), (10, 10), (5, 5), (3, 3), (1, 1)]
+ANCHOR_SIZE_BOUND = [0.15, 0.90]
 # anchor_size_bounds=[0.20, 0.90],
 ANCHOR_SIZE = [(21., 45.),
                 (45., 99.),
                 (99., 153.),
                 (153., 207.),
                 (207., 261.),
-                (261., 315.)],
+                (261., 315.)]
 # anchor_sizes=[(30., 60.),
 #               (60., 111.),
 #               (111., 162.),
@@ -96,10 +95,10 @@ ANCHOR_RATIO = [[2, .5],
                  [2, .5, 3, 1. / 3],
                  [2, .5, 3, 1. / 3],
                  [2, .5],
-                 [2, .5]],
-ANCHOR_STEPS = [8, 16, 32, 64, 100, 300],
-ANCHOR_OFFSETS = 0.5,
-NORMALIZATION = [20, -1, -1, -1, -1, -1],
+                 [2, .5]]
+ANCHOR_STEPS = [8, 16, 32, 64, 100, 300]
+ANCHOR_OFFSETS = 0.5
+NORMALIZATION = [20, -1, -1, -1, -1, -1]
 PRIOR_SCALING = [0.1, 0.1, 0.2, 0.2]
 
 #---------------------------ssd net flag-----------------------------

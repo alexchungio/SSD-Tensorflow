@@ -42,20 +42,28 @@ def train():
 
         anchor_encoder_fn = lambda gt_labels, gb_bboxes: ssd_net.bboxes_encode(gt_labels, gb_bboxes, ssd_anchors,
                                                                                scope="anchor_encode")
+        batch_shape = [1] * 3 + [len(ssd_anchors)] * 3
         image_batch, filename_batch, shape_batch, labels_batch, bboxes_batch, scores_batch = dataset_tfrecord(
             dataset_dir=cfgs.TFRECORD_DIR, split_name='train', batch_size=cfgs.BATCH_SIZE,
-            anchor_encoder_fn=anchor_encoder_fn, num_threads=cfgs.NUM_THREADS,
+            anchor_encoder_fn=anchor_encoder_fn, batch_shape=batch_shape, num_threads=cfgs.NUM_THREADS,
             is_training=True)
 
+        # batch_queue = slim.prefetch_queue.prefetch_queue(
+        #     tf_utils.reshape_list([image_batch, filename_batch, shape_batch, labels_batch, bboxes_batch, scores_batch]),
+        #     capacity=2)
+        #
+        # image_batch, filename_batch, shape_batch, labels_batch, bboxes_batch, scores_batch = \
+        #     tf_utils.reshape_list(batch_queue.dequeue(), batch_shape)
     # -------------------step 3 construct foward network-----------------------------
+
 
     # Construct SSD network.
     arg_scope = ssd_net.arg_scope(weight_decay=cfgs.WEIGHT_DECAY, data_format=cfgs.DATA_FORMAT)
     with slim.arg_scope(arg_scope):
-        predictions, localisations, logits, end_points = ssd_net.net(ssd_net.images_batch, is_training=True)
+        predictions, localisations, logits, end_points = ssd_net.net(image_batch, is_training=True)
     # Add loss function.
     ssd_net.losses(logits, localisations,
-                   ssd_net.labels_batch, ssd_net.bboxes_batch, ssd_net.scores_batch,
+                   labels_batch, bboxes_batch, scores_batch,
                    match_threshold=cfgs.MATCH_THRESHOLD,
                    negative_ratio=cfgs.NEGATIVE_RATIO,
                    alpha=cfgs.LOSS_ALPHA,
@@ -156,29 +164,25 @@ def train():
             if not coord.should_stop():
                 for step in range(cfgs.MAX_ITERATION):
 
-                    image, labels, bboxes, scores = \
-                        sess.run([image_batch, labels_batch, bboxes_batch, scores_batch])
-                    feed_dict = ssd_net.fill_feed_dict(image, labels, bboxes, scores)
+                    # image, labels, bboxes, scores = \
+                    #     sess.run([image_batch, labels_batch, bboxes_batch, scores_batch])
+                    # feed_dict = ssd_net.fill_feed_dict(image, labels, bboxes, scores)
                     training_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
 
                     if step % cfgs.SHOW_TRAIN_INFO_INTE != 0 and step % cfgs.SMRY_ITER != 0:
-                        _, globalStep = sess.run([train_op, global_step], feed_dict=feed_dict)
+                        _, globalStep = sess.run([train_op, global_step])
                     else:
                         if step % cfgs.SHOW_TRAIN_INFO_INTE == 0 and step % cfgs.SMRY_ITER != 0:
                             start_time = time.time()
 
-                            _, globalStep, totalLoss = \
-                                sess.run(
-                                    [train_op, global_step, total_loss],
-                                    feed_dict=feed_dict)
+                            _, globalStep, totalLoss = sess.run([train_op, global_step, total_loss])
 
                             end_time = time.time()
                             print(""" {}: step {}\t | total_loss:{} |\t per_cost_time:{}s""" \
                                   .format(training_time, globalStep,  totalLoss,(end_time - start_time)))
                         else:
                             if step % cfgs.SMRY_ITER == 0:
-                                _, globalStep, summary_str = sess.run([train_op, global_step, summary_op],
-                                                                      feed_dict=feed_dict)
+                                _, globalStep, summary_str = sess.run([train_op, global_step, summary_op])
                                 summary_writer.add_summary(summary_str, globalStep)
                                 summary_writer.flush()
 
