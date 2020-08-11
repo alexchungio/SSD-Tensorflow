@@ -73,7 +73,7 @@ def dataset_tfrecord(dataset_dir, split_name='train', batch_size=32, anchor_enco
         labels_to_names[pair[0]] = name
 
     dataset = slim.dataset.Dataset(
-        data_sources=dataset_dir,
+        data_sources=os.path.join(dataset_dir, '*'),
         reader=tf.TFRecordReader,
         decoder=decoder,
         num_samples=cfgs.NUM_SPLIT_DATA[split_name],
@@ -126,10 +126,12 @@ def image_process(image, gtboxes, labels, is_training=False):
         #
         # gtboxes = tf.boolean_mask(gtboxes, is_difficult_mask)
         # labels = tf.boolean_mask(labels, is_difficult_mask)
-        image, glabels, gbboxes = preprocess_image(image, labels, gtboxes, out_shape=cfgs.TRAIN_SIZE, is_training=True)
+        image, glabels, gbboxes = preprocess_image(image, labels, gtboxes, data_format=cfgs.DATA_FORMAT,
+                                                   out_shape=cfgs.TRAIN_SIZE, is_training=True)
 
     else:
-        image, glabels, gbboxes = preprocess_image(image, labels, gtboxes, out_shape=cfgs.EVAL_SIZE, is_training=False)
+        image, glabels, gbboxes = preprocess_image(image, labels, gtboxes, data_format=cfgs.DATA_FORMAT,
+                                                   out_shape=cfgs.EVAL_SIZE, is_training=False)
 
     return image, glabels, gbboxes
 
