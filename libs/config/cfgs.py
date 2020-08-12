@@ -20,6 +20,7 @@ from enum import Enum
 # VERSION = 'FPN_Res101_20181201'
 VERSION = 'FPN_Res101_20200728'
 MODEL_NAME = 'ssd_300_vgg'
+BASE_NETWORK_NAME = 'vgg_16'
 ADD_BOX_IN_TENSORBOARD = True
 
 # ---------------------------------------- System_config
