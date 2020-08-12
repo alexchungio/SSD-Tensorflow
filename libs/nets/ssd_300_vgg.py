@@ -54,7 +54,7 @@ from collections import namedtuple
 import numpy as np
 import tensorflow as tf
 
-from libs.config import cfgs
+from libs.configs import cfgs
 from libs.box_utils import bboxes_utils
 from libs.box_utils import box_select
 from libs.box_utils import encode_decode

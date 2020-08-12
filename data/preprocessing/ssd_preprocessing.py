@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from tensorflow.python.ops import control_flow_ops
 
-from libs.config import cfgs
+from libs.configs import cfgs
 from libs.box_utils import bboxes_utils
 import libs.tf_extend.math as extend_math
 from libs.tf_extend import metrics

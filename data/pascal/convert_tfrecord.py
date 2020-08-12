@@ -18,7 +18,7 @@ import tensorflow.compat.v1 as tf
 from lxml import etree
 import PIL.Image
 
-from libs.config import cfgs
+from libs.configs import cfgs
 from utils.tools import view_bar, makedir
 
 original_dataset_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/Pascal_VOC_2012/VOCtrainval'

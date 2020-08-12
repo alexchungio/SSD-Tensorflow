@@ -16,7 +16,7 @@ import tensorflow as tf
 from tensorflow.python.ops import control_flow_ops
 import tensorflow.contrib.slim as slim
 
-from libs.config import cfgs
+from libs.configs import cfgs
 from data.pascal.read_tfrecord import dataset_tfrecord
 from libs.nets.ssd_300_vgg import SSDNet
 from libs.tf_extend import tf_utils
@@ -78,8 +78,8 @@ def train():
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     # Add summaries for end_points.
     # Add summaries for losses and extra losses.
-    for loss in tf.get_collection(tf.GraphKeys.LOSSES):
-        tf.summary.scalar(loss.op.name, loss)
+    # for loss in tf.get_collection(tf.GraphKeys.LOSSES):
+    #     tf.summary.scalar(loss.op.name, loss)
 
     # Add summaries for variables.
     for variable in slim.get_model_variables():

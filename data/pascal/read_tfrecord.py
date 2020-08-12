@@ -21,7 +21,7 @@ from libs.tf_extend import tf_utils
 
 
 from libs.box_utils import draw_box_in_image
-from libs.config import cfgs
+from libs.configs import cfgs
 from data.preprocessing.ssd_preprocessing import preprocess_image
 
 # origin_dataset_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/pascal_split/val'
