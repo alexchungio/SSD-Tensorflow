@@ -111,7 +111,7 @@ MATCH_THRESHOLD = 0.5 # Matching threshold in the loss function.
 # Optimization Flags.
 # =========================================================================== #
 # use momentum optimizer
-WEIGHT_DECAY = 0.00004 # The weight decay on the model weights.
+WEIGHT_DECAY = 0.0005 # The weight decay on the model weights.
 MOMENTUM = 0.9  # The momentum for the MomentumOptimizer and RMSPropOptimizer.
 LEARING_RATE_BASE = 0.001
 WARM_UP_LEARING_RATE = 0.0001

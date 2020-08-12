@@ -18,7 +18,7 @@ import cv2 as cv
 
 
 from libs.config import cfgs
-from libs.nets import ssd_vgg_300
+from libs.nets import ssd_300_vgg
 import libs.box_utils.boxe_utils_np as np_methods
 from data.preprocessing import ssd_preprocessing
 from  libs.box_utils import draw_box_in_image
@@ -30,7 +30,7 @@ class ObjectInference():
         self.net_shape = net_shape
         self.num_classes = num_classes
         self.ckpt_path = ckpt_path
-        self.ssd_net = ssd_vgg_300.SSDNet()
+        self.ssd_net = ssd_300_vgg.SSDNet()
         self.data_format = cfgs.DATA_FORMAT
         # SSD default anchor boxes.
         self.ssd_anchors = self.ssd_net.make_anchors(net_shape)
