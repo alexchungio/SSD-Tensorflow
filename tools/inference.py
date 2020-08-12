@@ -17,7 +17,7 @@ import tensorflow.contrib.slim as slim
 import cv2 as cv
 
 
-from libs.config import cfgs
+from libs.configs import cfgs
 from libs.nets import ssd_300_vgg
 import libs.box_utils.boxe_utils_np as np_methods
 from data.preprocessing import ssd_preprocessing
