@@ -62,6 +62,7 @@ from libs.nets import custom_layers
 from libs.box_utils import anchor_utils
 
 from libs.losses import losses
+import os
 
 
 slim = tf.contrib.slim
@@ -402,14 +403,65 @@ class SSDNet(object):
 
         return total_loss, optimizer_gradients
 
-    def fill_feed_dict(self, image_batch, labels_batch, bboxes_batch, scores_batch):
+    # def fill_feed_dict(self, image_batch, labels_batch, bboxes_batch, scores_batch):
+    #
+    #     feed_dict = {self.images_batch: image_batch,
+    #                  self.labels_batch: labels_batch,
+    #                  self.bboxes_batch: bboxes_batch,
+    #                  self.scores_batch: scores_batch
+    #                  }
+    #     return feed_dict
 
-        feed_dict = {self.images_batch: image_batch,
-                     self.labels_batch: labels_batch,
-                     self.bboxes_batch: bboxes_batch,
-                     self.scores_batch: scores_batch
-                     }
-        return feed_dict
+    def restore_ckpt(self, sess):
+        """
+        restore pretrain weight
+        :param pretrain_model_dir:
+        :param is_pretrain:
+        :return:
+        """
+
+        checkpoint_path = tf.train.latest_checkpoint(os.path.join(cfgs.TRAINED_CKPT, cfgs.VERSION))
+
+        if checkpoint_path != None:
+            restorer = tf.train.Saver()
+            restorer.restore(sess, checkpoint_path)
+            print("model restore from {0}".format(checkpoint_path))
+        else:
+            checkpoint_path = os.path.join(cfgs.PRETRAINED_CKPT, 'vgg16.ckpt')
+            ckpt_scope = ['ssd_300_vgg/conv1', 'ssd_300_vgg_conv2', 'ssd_300_vgg/conv3', 'ssd_300_vgg_conv4',
+                               'ssd_300_vgg/conv5']
+            var_restore_dict = {}
+            for scope in ckpt_scope:
+                for var in slim.get_model_variables(scope=scope):
+                    var_name = var.op.name
+                    var_restore_dict[var_name] = var
+
+            var_base_restore_dict = {var_name.replace(cfgs.MODEL_NAME, cfgs.BASE_NETWORK_NAME): var
+                              for var_name, var in var_restore_dict.items()}
+
+            restore_variables = var_restore_dict
+            for key, item in restore_variables.items():
+                print("var_in_graph: ", item.name)
+                print("var_in_ckpt: ", key)
+
+            for var_name, var_shape in tf.train.list_variables(checkpoint_path):
+
+                if var_name in var_base_restore_dict.keys():
+                    # get_variable
+                    var_value = tf.train.load_variable(checkpoint_path, var_name)
+
+                    # dst_var = dst_var_map[var_name_map[var_name]]
+                    # # ensure the checkpoint variable shape same as  graph variable
+                    # var_value = tf.reshape(var_value, dst_var.shape)
+                    # assign value to variable of graph
+                    tf.assign(var_base_restore_dict[var_name], value=var_value)
+                else:
+                    pass
+
+            print("model restore from {0}".format(checkpoint_path))
+            print("restore from pretrained_weighs in IMAGE_NET")
+
+        return checkpoint_path
 
 
 # =========================================================================== #
