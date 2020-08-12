@@ -18,7 +18,7 @@ import tensorflow.contrib.slim as slim
 
 from libs.config import cfgs
 from data.pascal.read_tfrecord import dataset_tfrecord
-from libs.nets.ssd_vgg_300 import SSDNet
+from libs.nets.ssd_300_vgg import SSDNet
 from libs.tf_extend import tf_utils
 from utils.tools import makedir
 from libs.deployment import model_deploy
@@ -55,7 +55,6 @@ def train():
         # image_batch, filename_batch, shape_batch, labels_batch, bboxes_batch, scores_batch = \
         #     tf_utils.reshape_list(batch_queue.dequeue(), batch_shape)
     # -------------------step 3 construct foward network-----------------------------
-
 
     # Construct SSD network.
     arg_scope = ssd_net.arg_scope(weight_decay=cfgs.WEIGHT_DECAY, data_format=cfgs.DATA_FORMAT)
@@ -103,7 +102,8 @@ def train():
     learning_rate = ssd_net.learning_rate(boundaries=[cfgs.WARM_UP_STEP, cfgs.DECAY_STEP[0], cfgs.DECAY_STEP[1]],
                                           rates=[cfgs.WARM_UP_LEARING_RATE, cfgs.LEARING_RATE_BASE,
                                                  cfgs.LEARING_RATE_BASE / 10., cfgs.LEARING_RATE_BASE / 100.],
-                                          global_step=ssd_net.global_step)
+                                          global_step=ssd_net.global_step,
+                                          warmup=True)
 
     tf.summary.scalar('learning_rate', learning_rate)
     #-
@@ -150,7 +150,8 @@ def train():
 
         # if not restorer is None:
         #     restorer.restore(sess, save_path=restore_ckpt)
-        #     print('*' * 80 + '\nSuccessful restore model from {0}\n'.format(restore_ckpt) + '*' * 80)
+        restore_ckpt = ssd_net.restore_ckpt(sess)
+        print('*' * 80 + '\nSuccessful restore model from {0}\n'.format(restore_ckpt) + '*' * 80)
         # model_variables = slim.get_model_variables()
         # for var in model_variables:
         #     print(var.name, var.shape)
