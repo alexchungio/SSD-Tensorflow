@@ -76,9 +76,11 @@ class ObjectInference():
         with tf.Session(config=config) as sess:
             sess.run(init_op)
 
-            if restorer is not None:
+            if self.ckpt_path is not None:
                 restorer.restore(sess, self.ckpt_path)
-                print('*'*80 +'\nSuccessful restore model from {0}\n'.format(self.ckpt_path) + '*'*80)
+            else:
+                self.ckpt_path = self.ssd_net.restore_ckpt(sess)
+            print('*'*80 +'\nSuccessful restore model from {0}\n'.format(self.ckpt_path) + '*'*80)
 
             # construct image path list
             format_list = ('.jpg', '.png', '.jpeg', '.tif', '.tiff')
