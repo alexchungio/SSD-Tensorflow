@@ -162,6 +162,6 @@ if __name__ == "__main__":
 
     ckpt_path = '/home/alex/Documents/pretrain_model/ssd/ssd_300/VGG_VOC0712_SSD_300x300_ft_iter_120000.ckpt'
 
-    ssd_inference = ObjectInference(net_shape=(300, 300), ckpt_path=ckpt_path)
+    ssd_inference = ObjectInference(net_shape=(300, 300))
 
     ssd_inference.exucute_detect(image_path='./demo', save_path=cfgs.INFERENCE_SAVE_PATH)
