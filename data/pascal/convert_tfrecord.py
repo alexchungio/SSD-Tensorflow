@@ -21,16 +21,29 @@ import PIL.Image
 from libs.configs import cfgs
 from utils.tools import view_bar, makedir
 
-original_dataset_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/Pascal_VOC_2012/VOCtrainval'
+
+'''How to organize your dataset folder:
+  VOCROOT/
+       |->VOC2007/
+       |    |->Annotations/
+       |    |->ImageSets/
+       |    |->...
+       |->VOC2012/
+       |    |->Annotations/
+       |    |->ImageSets/
+       |    |->...
+'''
+
+original_dataset_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/Pascal_VOC/VOCtrainval/VOCdevkit'
 tfrecord_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/pascal_tfrecord_ssd'
 
 tf.app.flags.DEFINE_string('dataset_dir', original_dataset_dir, 'Voc dir')
 tf.app.flags.DEFINE_string('xml_dir', 'Annotations', 'xml dir')
 tf.app.flags.DEFINE_string('image_dir', 'JPEGImages', 'image dir')
 tf.app.flags.DEFINE_string('save_name', 'train', 'save name')
-tf.app.flags.DEFINE_string('year', 'VOC2012', 'Desired challenge year.')
+tf.app.flags.DEFINE_string('year', '2007,2012', 'Desired challenge year.')
 tf.app.flags.DEFINE_string('output_dir', tfrecord_dir, 'save name')
-tf.app.flags.DEFINE_string('img_format', '.jpg', 'format of image')
+tf.app.flags.DEFINE_string('img_format', 'jpg', 'format of image')
 tf.app.flags.DEFINE_boolean('ignore_difficult_instances', False, 'Whether to ignore '
                             'difficult instances')
 FLAGS = tf.app.flags.FLAGS
@@ -57,15 +70,30 @@ def convert_pascal_to_tfrecord(dataset_path, save_path, record_capacity=2000, sh
     :param record_capacity:
     :return:
     """
+    years = [s.strip() for s in FLAGS.year.split(',')]
     # record_file = os.path.join(FLAGS.save_dir, FLAGS.save_name+'.tfrecord')
-    img_path = os.path.join(dataset_path, 'VOCdevkit', FLAGS.year, FLAGS.image_dir)
-    xml_path = os.path.join(dataset_path, 'VOCdevkit', FLAGS.year, FLAGS.xml_dir)
 
-    img_xml_list = [os.path.basename(xml_file) for xml_file in glob.glob(os.path.join(xml_path, '*.xml'))]
+    # get image and xml list
+    img_name_list = []
+    img_xml_list = []
+
+    for year in years:
+        img_path = os.path.join(dataset_path, 'VOC'+year, FLAGS.image_dir)
+        xml_path = os.path.join(dataset_path, 'VOC'+year, FLAGS.xml_dir)
+        xml_list = [xml_file for xml_file in glob.glob(os.path.join(xml_path, '*.xml'))]
+        img_list = [os.path.join(img_path, os.path.basename(xml).replace('xml', FLAGS.img_format)) for xml in xml_list]
+        img_name_list.extend(img_list)
+        img_xml_list.extend(xml_list)
+
+
     if shuffling:
+        shuffled_index = list(range(len(img_name_list)))
         random.seed(0)
-        random.shuffle(img_xml_list)
-    img_name_list = [xml.split('.')[0] + FLAGS.img_format for xml in img_xml_list]
+        random.shuffle(shuffled_index)
+        img_name_shuffle = [img_name_list[index] for index in shuffled_index]
+        img_xml_shuffle = [img_xml_list[index] for index in shuffled_index]
+        img_name_list = img_name_shuffle
+        img_xml_list = img_xml_shuffle
 
     remainder_num = len(img_name_list) % record_capacity
     if remainder_num == 0:
@@ -85,13 +113,11 @@ def convert_pascal_to_tfrecord(dataset_path, save_path, record_capacity=2000, sh
             sub_xml_list = img_xml_list[(index * record_capacity): (index * record_capacity + remainder_num)]
 
         try:
-            for img_name, img_xml in zip(sub_img_list, sub_xml_list):
-                img_file = os.path.join(img_path, img_name)
-                xml_file = os.path.join(xml_path, img_xml)
+            for img_file, xml_file in zip(sub_img_list, sub_xml_list):
 
                 encoded_img, shape, bboxes, labels, labels_text, difficult, truncated = process_image(img_file, xml_file)
 
-                image_record = serialize_example(img_name, encoded_img, labels, labels_text, bboxes, shape, difficult, truncated)
+                image_record = serialize_example(img_file, encoded_img, labels, labels_text, bboxes, shape, difficult, truncated)
                 write.write(record=image_record)
 
                 num_samples += 1
