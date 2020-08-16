@@ -34,7 +34,7 @@ from utils.tools import view_bar, makedir
        |    |->...
 '''
 
-original_dataset_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/Pascal_VOC/VOCtrainval/VOCdevkit'
+original_dataset_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/pascal_voc/train/VOCdevkit'
 tfrecord_dir = '/media/alex/AC6A2BDB6A2BA0D6/alex_dataset/pascal_tfrecord_ssd'
 
 tf.app.flags.DEFINE_string('dataset_dir', original_dataset_dir, 'Voc dir')
