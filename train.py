@@ -105,9 +105,11 @@ def train():
                                           global_step=ssd_net.global_step,
                                           warmup=True)
 
-    tf.summary.scalar('learning_rate', learning_rate)
+    truncated_learning_rate = tf.maximum(learning_rate,  tf.constant(cfgs.END_LEARNING_RATE, dtype=learning_rate.dtype), name='learning_rate')
+
+    tf.summary.scalar('learning_rate', truncated_learning_rate)
     #-
-    optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=cfgs.MOMENTUM)
+    optimizer = tf.train.MomentumOptimizer(truncated_learning_rate, momentum=cfgs.MOMENTUM)
     if cfgs.MOVING_AVERATE_DECAY:
         # Update ops executed locally by trainer.
         update_ops.append(variable_averages.apply(moving_average_variables))
