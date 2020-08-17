@@ -398,10 +398,30 @@ class SSDNet(object):
         total_loss = self.gather_loss(regularization_losses)
 
         optimizer_gradients = None
+
         if total_loss is not None:
             optimizer_gradients = optimizer.compute_gradients(total_loss, **kwargs)
 
         return total_loss, optimizer_gradients
+
+
+    def get_train_variable(self, scopes=None):
+        """
+        get train variable
+        :param scopes:
+        :return:
+        """
+        trainable_variable = tf.trainable_variables()
+        if scopes is None:
+            pass
+        else:
+            frozen_variables = []
+            for scope in scopes:
+                frozen_variables.extend(tf.model_variables(scope))
+            # remove frozen variable
+            [trainable_variable.remove(var) for var in frozen_variables]
+
+        return trainable_variable
 
     # def fill_feed_dict(self, image_batch, labels_batch, bboxes_batch, scores_batch):
     #
@@ -428,8 +448,7 @@ class SSDNet(object):
             print("model restore from {0}".format(checkpoint_path))
         else:
             checkpoint_path = os.path.join(cfgs.PRETRAINED_CKPT, 'vgg16.ckpt')
-            ckpt_scope = ['ssd_300_vgg/conv1', 'ssd_300_vgg_conv2', 'ssd_300_vgg/conv3', 'ssd_300_vgg_conv4',
-                               'ssd_300_vgg/conv5']
+            ckpt_scope = cfgs.BACKBONE_SCOPE
             var_restore_dict = {}
             for scope in ckpt_scope:
                 for var in slim.get_model_variables(scope=scope):

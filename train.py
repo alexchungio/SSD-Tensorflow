@@ -110,23 +110,41 @@ def train():
     tf.summary.scalar('learning_rate', truncated_learning_rate)
     #-
     optimizer = tf.train.MomentumOptimizer(truncated_learning_rate, momentum=cfgs.MOMENTUM)
-    if cfgs.MOVING_AVERATE_DECAY:
-        # Update ops executed locally by trainer.
-        update_ops.append(variable_averages.apply(moving_average_variables))
 
+
+    if cfgs.MOVING_AVERATE_DECAY:
+        with tf.name_scope("weight_decay"):
+            # Update ops executed locally by trainer.
+            update_ops.append(variable_averages.apply(moving_average_variables))
 
     # and returns a train_tensor and summary_op
-    total_loss, clones_gradients = ssd_net.optimize_gradient(optimizer=optimizer)
+    with tf.name_scope("first_stage_train"):
+        first_stage_trainable_var_list = ssd_net.get_train_variable(scopes=cfgs.BACKBONE_SCOPE)
+        print("*" * 40, "first stage trainable variable:", "*" * 40)
+        for var in first_stage_trainable_var_list:
+            print(var.op.name, var.shape)
+        total_loss, gradients = ssd_net.optimize_gradient(optimizer=optimizer, var_list=first_stage_trainable_var_list)
+        # Create gradient updates.
+        grad_updates = optimizer.apply_gradients(gradients,
+                                                 global_step=global_step)
+        update_ops.append(grad_updates)
+        update_ops.append(global_step)
+        train_op_with_frozen = control_flow_ops.with_dependencies(update_ops, total_loss, name='train_op')
+
+    with tf.name_scope("second_stage_train"):
+        second_stage_trainable_var_list = ssd_net.get_train_variable(scopes=None)
+        print("*" * 40, "second stage trainable variable:", "*" * 40)
+        for var in second_stage_trainable_var_list:
+            print(var.op.name, var.shape)
+        total_loss, gradients = ssd_net.optimize_gradient(optimizer=optimizer, var_list=second_stage_trainable_var_list)
+        # Create gradient updates.
+        grad_updates = optimizer.apply_gradients(gradients, global_step=global_step)
+        update_ops.append(grad_updates)
+        update_ops.append(global_step)
+        train_op_with_all_variable = control_flow_ops.with_dependencies(update_ops, total_loss, name='train_op')
+
     # Add total_loss to summary.
     tf.summary.scalar('total_loss', total_loss)
-
-    # Create gradient updates.
-    grad_updates = optimizer.apply_gradients(clones_gradients,
-                                             global_step=global_step)
-    update_ops.append(grad_updates)
-    update_op = tf.group(*update_ops)
-    train_op = control_flow_ops.with_dependencies([update_op], total_loss, name='train_op')
-
     # Add the summaries from the first clone. These contain the summaries
     summary_op = tf.summary.merge_all()
 
@@ -166,6 +184,12 @@ def train():
         try:
             if not coord.should_stop():
                 for step in range(cfgs.MAX_ITERATION):
+                    if step < cfgs.FIRST_STAGE_STEP:
+                        train_op = train_op_with_frozen
+                        train_stage = 1
+                    else:
+                        train_op = train_op_with_all_variable
+                        train_stage = 2
 
                     # image, labels, bboxes, scores = \
                     #     sess.run([image_batch, labels_batch, bboxes_batch, scores_batch])
@@ -181,8 +205,8 @@ def train():
                             _, globalStep, totalLoss = sess.run([train_op, global_step, total_loss])
 
                             end_time = time.time()
-                            print(""" {}: step {}\t | total_loss:{} |\t per_cost_time:{}s""" \
-                                  .format(training_time, globalStep,  totalLoss,(end_time - start_time)))
+                            print(""" {} train stage-{}: step {}\t | total_loss:{} |\t per_cost_time:{}s""" \
+                                  .format(training_time, train_stage, globalStep,  totalLoss,(end_time - start_time)))
                         else:
                             if step % cfgs.SMRY_ITER == 0:
                                 _, globalStep, summary_str = sess.run([train_op, global_step, summary_op])

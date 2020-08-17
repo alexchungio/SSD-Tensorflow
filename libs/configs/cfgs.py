@@ -120,15 +120,17 @@ DECAY_STEP = [12000, 16000]  # 50000, 70000
 WARM_UP_STEP = 8000
 
 EPSILON = 1e-5
-MAX_ITERATION = 200000
+MAX_ITERATION = 250000
 
 LABELS_SMOOTH = 0.0  # The amount of label smoothing.
 MOVING_AVERATE_DECAY = None  # The decay to use for the moving average.
 
-
 # =========================================================================== #
 # Fine-Tuning Flags.
 # =========================================================================== #
+BACKBONE_SCOPE = ['ssd_300_vgg/conv1', 'ssd_300_vgg/conv2', 'ssd_300_vgg/conv3', 'ssd_300_vgg/conv4', 'ssd_300_vgg/conv5']
+FIRST_STAGE_STEP = 100000
+SECOND_STAGE_STEP = MAX_ITERATION - FIRST_STAGE_STEP
 CHEACKPOINT_PATH = None  # The path to a checkpoint from which to fine-tune.
 CHEACKPOINT_MODEL_SCOPE = None  # Model scope in the checkpoint. None if the same as the trained model.
 CHEACKPOINT_EXCLUDE_SCOPES = None  #Comma-separated list of scopes of variables to exclude when restoring from a checkpoint.
