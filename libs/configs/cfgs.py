@@ -116,11 +116,11 @@ MOMENTUM = 0.9  # The momentum for the MomentumOptimizer and RMSPropOptimizer.
 LEARING_RATE_BASE = 0.001
 WARM_UP_LEARING_RATE = 0.0001
 END_LEARNING_RATE = 0.000001
-DECAY_STEP = [120000, 160000]  # 50000, 70000
+DECAY_STEP = [80000, 120000]  # 50000, 70000
 WARM_UP_STEP = 8000
 
 EPSILON = 1e-5
-MAX_ITERATION = 250000
+MAX_ITERATION = 200000
 
 LABELS_SMOOTH = 0.0  # The amount of label smoothing.
 MOVING_AVERATE_DECAY = None  # The decay to use for the moving average.
@@ -136,7 +136,6 @@ CHEACKPOINT_MODEL_SCOPE = None  # Model scope in the checkpoint. None if the sam
 CHEACKPOINT_EXCLUDE_SCOPES = None  #Comma-separated list of scopes of variables to exclude when restoring from a checkpoint.
 TRAINABLE_SCOPE = None  # Comma-separated list of scopes to filter the set of variables to train. By default, None would train all the variables.
 IGNORE_MISSING_VARS = False  # When restoring a checkpoint would ignore missing variables.
-
 
 
 VOC_LABELS = {
